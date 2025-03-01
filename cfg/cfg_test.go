@@ -5,7 +5,7 @@ import (
 	"testing"
 )
 
-// Test config object.
+//--- BEGIN test cfg obj
 type cfgtest struct {
 	Foo    string         `default:"hello world"`
 	Bar    int            `default:"42"`
@@ -18,6 +18,7 @@ var _ IConfig = (*cfgtest)(nil)
 func (c *cfgtest) Defaults() (IConfig, error) {
 	return DefaultsHelper(c, nil)
 }
+//--- END test cfg obj
 
 var (
 	//The expected default value of a test config object

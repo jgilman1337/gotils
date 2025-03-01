@@ -14,6 +14,16 @@ type IConfig interface {
 			}
 	*/
 	Defaults() (IConfig, error)
+	
+	//SaveDefault() error
+	//Save() error
+	SaveAs(path string) error
+	
+	//Load() (IConfig, error)
+	//LoadAs(path string) (IConfig, error)
+	
+	//Init() (IConfig, error)
+	//InitAs(path string) (IConfig, error)
 
 	//defaultPathName() string //Specifies the default location to drop the default configuration.
 }
