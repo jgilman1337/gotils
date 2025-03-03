@@ -39,3 +39,9 @@ func DefaultsHelper(c IConfig, dfunc DefaultsProvider) (IConfig, error) {
 		return c, defaults.Set(c)
 	}
 }
+
+// Helper function to get zero value of any type
+func Zero[T any]() T {
+	var zero T
+	return zero
+}
