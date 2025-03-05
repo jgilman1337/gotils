@@ -13,12 +13,13 @@ import (
 // Defines a default configuration provider function.
 type DefaultsProvider[T any] func() (IConfig[T], error)
 
-// Impelments a basic configuration object that contains a data struct, which holds thr actual configuration data.
+// Implements a basic configuration object that contains a data struct, which holds thr actual configuration data.
 type Config[T any] struct {
-	data T // The inner configuration data object.
-
-	DFunc DefaultsProvider[T] // The function that will set default values.
+	data  T                   //The inner configuration data object.
+	DFunc DefaultsProvider[T] //The function that will set default values.
 }
+
+//TODO: try to use a custom struct tag `kname` that indicates the name of the key
 
 // Enforces compliance with the IConfig interface.
 var _ IConfig[any] = (*Config[any])(nil)

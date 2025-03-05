@@ -11,7 +11,7 @@ type IConfig[T any] interface {
 	// Sets the default values for this config object.
 	Defaults() (IConfig[T], error)
 
-	//Checks if the data of two config objects pointed to by Data() are deeply equal.
+	// Checks if the data of two config objects pointed to by Data() are deeply equal.
 	Equal(other IConfig[T]) bool
 
 	// Saves the default config object to the default path.
@@ -33,5 +33,3 @@ type IConfig[T any] interface {
 
 	// defaultPathName() string //Specifies the default location to drop the default configuration.
 }
-
-//TODO: try to use a custom struct tag `kname` that indicates the name of the key
