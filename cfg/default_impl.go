@@ -69,11 +69,11 @@ func (c *Config[T]) Defaults() (IConfig, error) {
 // Implements the SaveAs() function from IConfig.
 func (c Config[T]) SaveAs(path string) error {
 	/*
-	data, err := json.Marshal(c.Data)
-	if err != nil {
-		return err
-	}
-	return os.WriteFile(path, data, 0644)
+		data, err := json.Marshal(c.Data)
+		if err != nil {
+			return err
+		}
+		return os.WriteFile(path, data, 0644)
 	*/
 	return nil
 }

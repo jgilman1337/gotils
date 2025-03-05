@@ -12,13 +12,13 @@ type UMarshalerFunc func(b []byte, c cfg.IConfig) error
 type Marshaler interface {
 	// The default path	to use when reading/writing.
 	DefaultPath() string
-	
+
 	// Converts a config object to a byte stream for writing to a file.
 	MFunc(c cfg.IConfig) ([]byte, error)
-	
+
 	// Indicates the priority of the marshaler. Higher numbers generally mean higher priority and run last when marshaling and unmarshaling.
 	Priority() int
-	
+
 	// Converts a byte stream to a config object for usage.
 	UFunc(b []byte, c cfg.IConfig) error
 }

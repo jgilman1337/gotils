@@ -12,6 +12,7 @@ type cfgtest struct {
 	FooBar map[string]int `default:"{\"foo\": 1, \"bar\": 2, \"baz\": 3}"`
 	Baz    []string       `default:"[\"foo\", \"bar\", \"baz\"]"`
 }
+
 //--- END test cfg obj
 
 var (

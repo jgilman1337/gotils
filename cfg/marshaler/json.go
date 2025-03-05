@@ -6,7 +6,7 @@ import (
 )
 
 // Represents a JSON marshaler that implements Marshaler.
-type Json struct {}
+type Json struct{}
 
 // Enforces compliance with the Marshaler interface.
 var _ Marshaler = (*Json)(nil)
