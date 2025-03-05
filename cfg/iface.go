@@ -11,6 +11,9 @@ type IConfig[T any] interface {
 	// Sets the default values for this config object.
 	Defaults() (IConfig[T], error)
 
+	//Checks if the data of two config objects pointed to by Data() are deeply equal.
+	Equal(other IConfig[T]) bool
+
 	// Saves the default config object to the default path.
 	// SaveDefault() error
 	// Saves a config object to the default path.

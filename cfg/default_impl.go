@@ -68,6 +68,11 @@ func (c *Config[T]) Defaults() (IConfig[T], error) {
 	}
 }
 
+// Implements the Equal() function from IConfig.
+func (c Config[T]) Equal(other IConfig[T]) bool {
+	return reflect.DeepEqual(c.Data(), other.Data())
+}
+
 // Implements the SaveAs() function from IConfig.
 func (c Config[T]) SaveAs(path string) error {
 	/*

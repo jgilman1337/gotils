@@ -17,8 +17,8 @@ func (j Json[T]) DefaultPath() string {
 	return "config.json"
 }
 
-// Implements the MFunc() function from Marshaler.
-func (j Json[T]) MFunc(c cfg.IConfig[T]) ([]byte, error) {
+// Implements the Marshal() function from Marshaler.
+func (j Json[T]) Marshal(c cfg.IConfig[T]) ([]byte, error) {
 	return json.Marshal(c.Data())
 }
 
@@ -27,7 +27,7 @@ func (j Json[T]) Priority() int {
 	return 0
 }
 
-// Implements the UFunc() function from Marshaler.
-func (j Json[T]) UFunc(b []byte, c cfg.IConfig[T]) error {
+// Implements the UMarshal() function from Marshaler.
+func (j Json[T]) UMarshal(b []byte, c cfg.IConfig[T]) error {
 	return json.Unmarshal(b, c.Data())
 }

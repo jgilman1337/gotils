@@ -27,17 +27,17 @@ var (
 		Baz:    []string{"foo", "bar", "baz"},
 	})
 
-	//The expected output of a Json marshal
+	//The expected output of a JSON marshal
 	jout = []byte(`{"Foo":"hello world","Bar":42,"FooBar":{"bar":2,"baz":3,"foo":1},"Baz":["foo","bar","baz"]}`)
 
-	//A Json marshaler instance for testing
+	//A JSON marshaler instance for testing
 	mjson = Json[cfgtest]{}
 )
 
-// Tests the marshaling function of the Json marshaler struct.
+// Tests the marshaling function of the JSON marshaler struct.
 func TestMarshalJson(t *testing.T) {
 	//Run the test
-	actual, err := mjson.MFunc(dat)
+	actual, err := mjson.Marshal(dat)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -49,19 +49,17 @@ func TestMarshalJson(t *testing.T) {
 	}
 }
 
-// Tests the unmarshaling function of the Json marshaler struct.
+// Tests the unmarshaling function of the JSON marshaler struct.
 func TestUMarshalJson(t *testing.T) {
 	//Run the test
 	var actual cfg.Config[cfgtest]
-	if err := mjson.UFunc(jout, &actual); err != nil { //TODO: add equals function to the interface, which deep compares against the `Data()` field of both interfaces
+	if err := mjson.UMarshal(jout, &actual); err != nil {
 		t.Fatal(err)
 	}
 	fmt.Printf("%+v\n", actual)
 
-	/*
-		//Check for accuracy
-		if bytes.Compare(actual, jout) != 0 {
-			t.Fatalf("incorrect JSON marshal output; got `%s`, expected `%s`\n", actual, jout)
-		}
-	*/
+	//Check for accuracy
+	if !dat.Equal(&actual) {
+		t.Fatalf("incorrect JSON unmarshal output; got `%+v`, expected `%+v`\n", actual.Data(), dat.Data())
+	}
 }
