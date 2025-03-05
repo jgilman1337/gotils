@@ -12,12 +12,6 @@ type cfgtest struct {
 	FooBar map[string]int `default:"{\"foo\": 1, \"bar\": 2, \"baz\": 3}"`
 	Baz    []string       `default:"[\"foo\", \"bar\", \"baz\"]"`
 }
-
-/*
-func (c *cfgtest) Defaults() (IConfig, error) {
-	return DefaultsHelper(c, nil)
-}
-*/
 //--- END test cfg obj
 
 var (

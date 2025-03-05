@@ -5,6 +5,9 @@ Represents a generic configuration object that has many QoL features like defaul
 marshaling/unmarshaling to/from byte streams, and more.
 */
 type IConfig interface {
+	// Provides a writable pointer to the config data contained within an IConfig struct. 
+	Data() any
+	
 	// Sets the default values for this config object.
 	Defaults() (IConfig, error)
 
