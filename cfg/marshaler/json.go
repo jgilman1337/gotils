@@ -2,31 +2,32 @@ package marshaler
 
 import (
 	"encoding/json"
+
 	"github.com/jgilman1337/gotils/cfg"
 )
 
 // Represents a JSON marshaler that implements Marshaler.
-type Json struct{}
+type Json[T any] struct{}
 
 // Enforces compliance with the Marshaler interface.
-var _ Marshaler = (*Json)(nil)
+var _ Marshaler[any] = (*Json[any])(nil)
 
 // Implements the DefaultPath() function from Marshaler.
-func (j Json) DefaultPath() string {
+func (j Json[T]) DefaultPath() string {
 	return "config.json"
 }
 
 // Implements the MFunc() function from Marshaler.
-func (j Json) MFunc(c cfg.IConfig) ([]byte, error) {
-	return json.Marshal(c.Data()) //TODO: data pass here
+func (j Json[T]) MFunc(c cfg.IConfig[T]) ([]byte, error) {
+	return json.Marshal(c.Data())
 }
 
 // Implements the Priority() function from Marshaler.
-func (j Json) Priority() int {
+func (j Json[T]) Priority() int {
 	return 0
 }
 
 // Implements the UFunc() function from Marshaler.
-func (j Json) UFunc(b []byte, c cfg.IConfig) error {
-	return json.Unmarshal(b, &c.Data())
+func (j Json[T]) UFunc(b []byte, c cfg.IConfig[T]) error {
+	return json.Unmarshal(b, c.Data())
 }

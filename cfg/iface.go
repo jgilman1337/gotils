@@ -4,12 +4,12 @@ package cfg
 Represents a generic configuration object that has many QoL features like default values,
 marshaling/unmarshaling to/from byte streams, and more.
 */
-type IConfig interface {
+type IConfig[T any] interface {
 	// Provides a writable pointer to the config data contained within an IConfig struct.
-	Data() any
+	Data() *T
 
 	// Sets the default values for this config object.
-	Defaults() (IConfig, error)
+	Defaults() (IConfig[T], error)
 
 	// Saves the default config object to the default path.
 	// SaveDefault() error

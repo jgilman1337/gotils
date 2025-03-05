@@ -3,23 +3,25 @@ package cfg
 import (
 	//"encoding/json"
 	"fmt"
+
 	"github.com/creasty/defaults"
+
 	//"os"
 	"reflect"
 )
 
 // Defines a default configuration provider function.
-type DefaultsProvider func() (IConfig, error)
+type DefaultsProvider[T any] func() (IConfig[T], error)
 
 // Impelments a basic configuration object that contains a data struct, which holds thr actual configuration data.
 type Config[T any] struct {
 	data T // The inner configuration data object.
 
-	DFunc DefaultsProvider // The function that will set default values.
+	DFunc DefaultsProvider[T] // The function that will set default values.
 }
 
 // Enforces compliance with the IConfig interface.
-var _ IConfig = (*Config[any])(nil)
+var _ IConfig[any] = (*Config[any])(nil)
 
 // Creates a new Config object using a data struct.
 func NewConfig[T any](data T) *Config[T] {
@@ -29,12 +31,12 @@ func NewConfig[T any](data T) *Config[T] {
 }
 
 // Implements the Data() function from IConfig.
-func (c *Config[T]) Data() any {
-	return c.data //TODO: maybe use generics here to avoid unnecessary casts
+func (c *Config[T]) Data() *T {
+	return &c.data
 }
 
 // Implements the Defaults() function from IConfig. Uses creasty/defaults or a custom provider to provide the default object.
-func (c *Config[T]) Defaults() (IConfig, error) {
+func (c *Config[T]) Defaults() (IConfig[T], error) {
 	//return &Config[T]{Data: Zero[T]()}, nil
 
 	//Use the defaults provider if set

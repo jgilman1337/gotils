@@ -3,8 +3,9 @@ package marshaler
 import (
 	"bytes"
 	"fmt"
-	"github.com/jgilman1337/gotils/cfg"
 	"testing"
+
+	"github.com/jgilman1337/gotils/cfg"
 )
 
 // --- BEGIN test cfg obj
@@ -30,7 +31,7 @@ var (
 	jout = []byte(`{"Foo":"hello world","Bar":42,"FooBar":{"bar":2,"baz":3,"foo":1},"Baz":["foo","bar","baz"]}`)
 
 	//A Json marshaler instance for testing
-	mjson = Json{}
+	mjson = Json[cfgtest]{}
 )
 
 // Tests the marshaling function of the Json marshaler struct.
@@ -52,7 +53,7 @@ func TestMarshalJson(t *testing.T) {
 func TestUMarshalJson(t *testing.T) {
 	//Run the test
 	var actual cfg.Config[cfgtest]
-	if err := mjson.UFunc(jout, actual); err != nil {
+	if err := mjson.UFunc(jout, &actual); err != nil { //TODO: add equals function to the interface, which deep compares against the `Data()` field of both interfaces
 		t.Fatal(err)
 	}
 	fmt.Printf("%+v\n", actual)
