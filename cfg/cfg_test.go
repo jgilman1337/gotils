@@ -30,12 +30,17 @@ func TestCopyDefault(t *testing.T) {
 
 }
 
-// Tests the "initialize with defaults" functionality of the configuration utility.
-func TestInitDefault(t *testing.T) {
+// Tests the "defaults" functionality of the configuration utility.
+func TestDefaults(t *testing.T) {
+	//Run the test
 	actual, err := NewConfig(cfgtest{}).Defaults()
-
 	if err != nil {
 		t.Fatal(err)
 	}
 	fmt.Printf("%+v\n", actual)
+
+	//Check for accuracy
+	if !dat.Equal(actual) {
+		t.Fatalf("incorrect defaults output; got `%+v`, expected `%+v`\n", actual.Data(), dat.Data())
+	}
 }
