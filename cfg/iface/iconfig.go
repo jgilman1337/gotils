@@ -1,4 +1,4 @@
-package cfg
+package iface
 
 /*
 Represents a generic configuration object that has many QoL features like default values,

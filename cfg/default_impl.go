@@ -5,13 +5,14 @@ import (
 	"fmt"
 
 	"github.com/creasty/defaults"
+	"github.com/jgilman1337/gotils/cfg/iface"
 
 	//"os"
 	"reflect"
 )
 
 // Defines a default configuration provider function.
-type DefaultsProvider[T any] func() (IConfig[T], error)
+type DefaultsProvider[T any] func() (iface.IConfig[T], error)
 
 // Implements a basic configuration object that contains a data struct, which holds thr actual configuration data.
 type Config[T any] struct {
@@ -22,7 +23,7 @@ type Config[T any] struct {
 //TODO: try to use a custom struct tag `kname` that indicates the name of the key
 
 // Enforces compliance with the IConfig interface.
-var _ IConfig[any] = (*Config[any])(nil)
+var _ iface.IConfig[any] = (*Config[any])(nil)
 
 // Creates a new Config object using a data struct.
 func NewConfig[T any](data T) *Config[T] {
@@ -37,7 +38,7 @@ func (c *Config[T]) Data() *T {
 }
 
 // Implements the Defaults() function from IConfig. Uses creasty/defaults or a custom provider to provide the default object.
-func (c *Config[T]) Defaults() (IConfig[T], error) {
+func (c *Config[T]) Defaults() (iface.IConfig[T], error) {
 	//return &Config[T]{Data: Zero[T]()}, nil
 
 	//Use the defaults provider if set
@@ -70,7 +71,7 @@ func (c *Config[T]) Defaults() (IConfig[T], error) {
 }
 
 // Implements the Equal() function from IConfig.
-func (c Config[T]) Equal(other IConfig[T]) bool {
+func (c Config[T]) Equal(other iface.IConfig[T]) bool {
 	return reflect.DeepEqual(c.Data(), other.Data())
 }
 

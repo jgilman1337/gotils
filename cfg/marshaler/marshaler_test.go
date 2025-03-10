@@ -44,7 +44,7 @@ func TestMarshalJson(t *testing.T) {
 	fmt.Printf("%s\n", actual)
 
 	//Check for accuracy
-	if bytes.Compare(actual, jout) != 0 {
+	if !bytes.Equal(actual, jout) {
 		t.Fatalf("incorrect JSON marshal output; got `%s`, expected `%s`\n", actual, jout)
 	}
 }
