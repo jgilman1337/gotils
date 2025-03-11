@@ -1,14 +1,19 @@
 package cfg
 
 import (
-	//"encoding/json"
+	"errors"
 	"fmt"
+	"reflect"
+	"strconv"
 
 	"github.com/creasty/defaults"
+	pq "github.com/emirpasic/gods/v2/queues/priorityqueue"
 	"github.com/jgilman1337/gotils/cfg/iface"
+)
 
-	//"os"
-	"reflect"
+var (
+	ErrNoMarshalers          = errors.New("cannot marshal/unmarshal; no marshalers are bound to this object")
+	ErrMarshalerAlreadyBound = errors.New("the incoming marshaler at pos %d is already bound as %s (priority: %d)")
 )
 
 // Defines a default configuration provider function.
@@ -16,8 +21,9 @@ type DefaultsProvider[T any] func() (iface.IConfig[T], error)
 
 // Implements a basic configuration object that contains a data struct, which holds thr actual configuration data.
 type Config[T any] struct {
-	data  T                   //The inner configuration data object.
-	DFunc DefaultsProvider[T] //The function that will set default values.
+	DFunc      DefaultsProvider[T]           //The function that will set default values.
+	data       T                             //The inner configuration data object.
+	marshalers *pq.Queue[iface.Marshaler[T]] //The config marshalers that are bound to this object.
 }
 
 //TODO: try to use a custom struct tag `kname` that indicates the name of the key
@@ -27,9 +33,41 @@ var _ iface.IConfig[any] = (*Config[any])(nil)
 
 // Creates a new Config object using a data struct.
 func NewConfig[T any](data T) *Config[T] {
-	return &Config[T]{
-		data: data,
+	//Setup the comparator function for the marshalers
+	mcomparator := func(a, b iface.Marshaler[T]) int {
+		priA, priB := a.Priority(), b.Priority()
+		switch {
+		case priA > priB:
+			return 1
+		case priA < priB:
+			return -1
+		default:
+			return 0
+		}
 	}
+
+	return &Config[T]{
+		data:       data,
+		marshalers: pq.NewWith(mcomparator),
+	}
+}
+
+// Implements the BindMarshaler() function from IConfig.
+func (c *Config[T]) BindMarshaler(nms ...iface.Marshaler[T]) error {
+	for i, nm := range nms {
+		for _, em := range c.marshalers.Values() {
+			//Check if one of the incoming marshalers is already bound
+			cmid := em.Ident()
+			if nm.Ident() == cmid {
+				return fmt.Errorf(strconv.Itoa(i), cmid, em.Priority())
+			}
+
+			//No clashes; add the marshaler
+			c.marshalers.Enqueue(nm)
+		}
+	}
+
+	return nil
 }
 
 // Implements the Data() function from IConfig.
@@ -51,6 +89,7 @@ func (c *Config[T]) Defaults() (iface.IConfig[T], error) {
 
 		//Use reflection to set the value
 		//TODO: make this a utility
+		//TODO: may not be necessary to do all of these checks; more testing is required
 		v := reflect.ValueOf(c)
 		if v.Kind() != reflect.Ptr || v.IsNil() {
 			return nil, fmt.Errorf("c must be a non-nil pointer")
@@ -76,7 +115,15 @@ func (c Config[T]) Equal(other iface.IConfig[T]) bool {
 }
 
 // Implements the SaveAs() function from IConfig.
-func (c Config[T]) SaveAs(path string) error {
+func (c Config[T]) SaveAs(paths string) error {
+	//Ensure at least one marshaler is bound before continuing
+	if c.marshalers.Empty() {
+		return fmt.Errorf(ErrNoMarshalers.Error())
+	}
+
+	//Loop over the marshalers
+	//var data []byte
+
 	/*
 		data, err := json.Marshal(c.Data)
 		if err != nil {

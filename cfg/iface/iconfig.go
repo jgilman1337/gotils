@@ -5,6 +5,9 @@ Represents a generic configuration object that has many QoL features like defaul
 marshaling/unmarshaling to/from byte streams, and more.
 */
 type IConfig[T any] interface {
+	// Binds a marshaler or list of marshalers to this config object.
+	BindMarshaler(nms ...Marshaler[T]) error
+
 	// Provides a writable pointer to the config data contained within an IConfig struct.
 	Data() *T
 

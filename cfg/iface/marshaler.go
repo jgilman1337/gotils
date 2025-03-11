@@ -11,11 +11,14 @@ type Marshaler[T any] interface {
 	// The default path	to use when reading/writing.
 	DefaultPath() string
 
+	//The name of the marshaler. Must be constant and unique against other structs implementing this interface.
+	Ident() string
+
 	// Converts a config object to a byte stream for writing to a file.
 	Marshal(c IConfig[T]) ([]byte, error)
 
 	// Indicates the priority of the marshaler. Higher numbers generally mean higher priority and run last when marshaling and unmarshaling.
-	Priority() int
+	Priority() int8
 
 	// Converts a byte stream to a config object for usage.
 	UMarshal(b []byte, c IConfig[T]) error
