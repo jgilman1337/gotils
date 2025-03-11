@@ -1,4 +1,6 @@
-package iface
+package cfg
+
+import "github.com/jgilman1337/gotils/cfg/marshaler"
 
 /*
 Represents a generic configuration object that has many QoL features like default values,
@@ -6,7 +8,7 @@ marshaling/unmarshaling to/from byte streams, and more.
 */
 type IConfig[T any] interface {
 	// Binds a marshaler or list of marshalers to this config object.
-	BindMarshaler(nms ...Marshaler[T]) error
+	BindMarshaler(nms ...marshaler.Marshaler[T]) error
 
 	// Provides a writable pointer to the config data contained within an IConfig struct.
 	Data() *T
@@ -27,7 +29,7 @@ type IConfig[T any] interface {
 	// Saves this config object to the default path.
 	// func Load() {}
 	// Loads this config object from a given path.
-	// func LoadAs() {}
+	LoadAs(path string) (IConfig[T], error)
 
 	// Loads this config object from the default path, saving the default version if it doesn't exist.
 	// func Init() {}

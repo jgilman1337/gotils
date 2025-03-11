@@ -8,7 +8,7 @@ import (
 
 	"github.com/creasty/defaults"
 	pq "github.com/emirpasic/gods/v2/queues/priorityqueue"
-	"github.com/jgilman1337/gotils/cfg/iface"
+	"github.com/jgilman1337/gotils/cfg/marshaler"
 )
 
 var (
@@ -17,24 +17,25 @@ var (
 )
 
 // Defines a default configuration provider function.
-type DefaultsProvider[T any] func() (iface.IConfig[T], error)
+type DefaultsProvider[T any] func() (IConfig[T], error)
 
 // Implements a basic configuration object that contains a data struct, which holds thr actual configuration data.
 type Config[T any] struct {
-	DFunc      DefaultsProvider[T]           //The function that will set default values.
-	data       T                             //The inner configuration data object.
-	marshalers *pq.Queue[iface.Marshaler[T]] //The config marshalers that are bound to this object.
+	DFunc      DefaultsProvider[T]               //The function that will set default values.
+	data       T                                 //The inner configuration data object.
+	marshalers *pq.Queue[marshaler.Marshaler[T]] //The config marshalers that are bound to this object.
+	//TODO: use a custom struct or lookup table so it can be determined whether the marshaler has a backing file and more; don't just use a priority queue here
 }
 
 //TODO: try to use a custom struct tag `kname` that indicates the name of the key
 
 // Enforces compliance with the IConfig interface.
-var _ iface.IConfig[any] = (*Config[any])(nil)
+var _ IConfig[any] = (*Config[any])(nil)
 
 // Creates a new Config object using a data struct.
 func NewConfig[T any](data T) *Config[T] {
 	//Setup the comparator function for the marshalers
-	mcomparator := func(a, b iface.Marshaler[T]) int {
+	mcomparator := func(a, b marshaler.Marshaler[T]) int {
 		priA, priB := a.Priority(), b.Priority()
 		switch {
 		case priA > priB:
@@ -53,7 +54,7 @@ func NewConfig[T any](data T) *Config[T] {
 }
 
 // Implements the BindMarshaler() function from IConfig.
-func (c *Config[T]) BindMarshaler(nms ...iface.Marshaler[T]) error {
+func (c *Config[T]) BindMarshaler(nms ...marshaler.Marshaler[T]) error {
 	for i, nm := range nms {
 		for _, em := range c.marshalers.Values() {
 			//Check if one of the incoming marshalers is already bound
@@ -76,7 +77,7 @@ func (c *Config[T]) Data() *T {
 }
 
 // Implements the Defaults() function from IConfig. Uses creasty/defaults or a custom provider to provide the default object.
-func (c *Config[T]) Defaults() (iface.IConfig[T], error) {
+func (c *Config[T]) Defaults() (IConfig[T], error) {
 	//return &Config[T]{Data: Zero[T]()}, nil
 
 	//Use the defaults provider if set
@@ -110,16 +111,23 @@ func (c *Config[T]) Defaults() (iface.IConfig[T], error) {
 }
 
 // Implements the Equal() function from IConfig.
-func (c Config[T]) Equal(other iface.IConfig[T]) bool {
+func (c Config[T]) Equal(other IConfig[T]) bool {
 	return reflect.DeepEqual(c.Data(), other.Data())
+}
+
+// Implements the LoadAs() function from IConfig.
+func (c *Config[T]) LoadAs(path string) (IConfig[T], error) {
+	return nil, nil
 }
 
 // Implements the SaveAs() function from IConfig.
 func (c Config[T]) SaveAs(paths string) error {
 	//Ensure at least one marshaler is bound before continuing
 	if c.marshalers.Empty() {
-		return fmt.Errorf(ErrNoMarshalers.Error())
+		return ErrNoMarshalers
 	}
+
+	//TODO: ensure the number of passed paths matches the number of marshalers that have a backing file
 
 	//Loop over the marshalers
 	//var data []byte

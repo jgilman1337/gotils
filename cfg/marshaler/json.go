@@ -2,8 +2,6 @@ package marshaler
 
 import (
 	"encoding/json"
-
-	"github.com/jgilman1337/gotils/cfg/iface"
 )
 
 // Represents a JSON marshaler that implements Marshaler.
@@ -12,7 +10,7 @@ type Json[T any] struct {
 }
 
 // Enforces compliance with the Marshaler interface.
-var _ iface.Marshaler[any] = (*Json[any])(nil)
+var _ Marshaler[any] = (*Json[any])(nil)
 
 // Creates a new Json marshaler object with a the default priority of 0.
 func NewJson[T any]() Json[T] {
@@ -22,6 +20,11 @@ func NewJson[T any]() Json[T] {
 // Creates a new Json marshaler object with a given priority.
 func NewJsonPriority[T any](priority int8) Json[T] {
 	return Json[T]{priority: priority}
+}
+
+// Implements the BackedByFile() function from Marshaler.
+func (j Json[T]) BackedByFile() bool {
+	return true
 }
 
 // Implements the DefaultPath() function from Marshaler.
@@ -35,8 +38,8 @@ func (j Json[T]) Ident() string {
 }
 
 // Implements the Marshal() function from Marshaler.
-func (j Json[T]) Marshal(c iface.IConfig[T]) ([]byte, error) {
-	return json.Marshal(c.Data())
+func (j Json[T]) Marshal(c *T) ([]byte, error) {
+	return json.Marshal(c)
 }
 
 // Implements the Priority() function from Marshaler.
@@ -45,6 +48,6 @@ func (j Json[T]) Priority() int8 {
 }
 
 // Implements the UMarshal() function from Marshaler.
-func (j Json[T]) UMarshal(b []byte, c iface.IConfig[T]) error {
-	return json.Unmarshal(b, c.Data())
+func (j Json[T]) UMarshal(b []byte, c *T) error {
+	return json.Unmarshal(b, &c)
 }
