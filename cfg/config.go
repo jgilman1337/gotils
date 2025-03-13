@@ -127,7 +127,7 @@ func (c Config[T]) SaveAs(paths string) error {
 		return ErrNoMarshalers
 	}
 
-	//TODO: ensure the number of passed paths matches the number of marshalers that have a backing file
+	//TODO: ensure the number of passed paths matches the number of marshalers that have a backing file, then marshal & save in order of L2H priority for all that have a backing file
 
 	//Loop over the marshalers
 	//var data []byte
