@@ -3,11 +3,10 @@ package cfg
 import (
 	"errors"
 	"fmt"
+	"os"
 	"reflect"
-	"strconv"
 
 	"github.com/creasty/defaults"
-	pq "github.com/emirpasic/gods/v2/queues/priorityqueue"
 	"github.com/jgilman1337/gotils/cfg/marshaler"
 )
 
@@ -21,10 +20,9 @@ type DefaultsProvider[T any] func() (IConfig[T], error)
 
 // Implements a basic configuration object that contains a data struct, which holds thr actual configuration data.
 type Config[T any] struct {
-	DFunc      DefaultsProvider[T]               //The function that will set default values.
-	data       T                                 //The inner configuration data object.
-	marshalers *pq.Queue[marshaler.Marshaler[T]] //The config marshalers that are bound to this object.
-	//TODO: use a custom struct or lookup table so it can be determined whether the marshaler has a backing file and more; don't just use a priority queue here
+	DFunc      DefaultsProvider[T]   //The function that will set default values.
+	data       T                     //The inner configuration data object.
+	marshalers []marshaler.Marshaler //The config marshalers that are bound to this object.
 }
 
 //TODO: try to use a custom struct tag `kname` that indicates the name of the key
@@ -34,41 +32,25 @@ var _ IConfig[any] = (*Config[any])(nil)
 
 // Creates a new Config object using a data struct.
 func NewConfig[T any](data T) *Config[T] {
-	//Setup the comparator function for the marshalers
-	mcomparator := func(a, b marshaler.Marshaler[T]) int {
-		priA, priB := a.Priority(), b.Priority()
-		switch {
-		case priA > priB:
-			return 1
-		case priA < priB:
-			return -1
-		default:
-			return 0
-		}
-	}
-
 	return &Config[T]{
 		data:       data,
-		marshalers: pq.NewWith(mcomparator),
+		marshalers: make([]marshaler.Marshaler, 0),
 	}
 }
 
-// Implements the BindMarshaler() function from IConfig.
-func (c *Config[T]) BindMarshaler(nms ...marshaler.Marshaler[T]) error {
-	for i, nm := range nms {
-		for _, em := range c.marshalers.Values() {
-			//Check if one of the incoming marshalers is already bound
-			cmid := em.Ident()
-			if nm.Ident() == cmid {
-				return fmt.Errorf(strconv.Itoa(i), cmid, em.Priority())
-			}
-
-			//No clashes; add the marshaler
-			c.marshalers.Enqueue(nm)
-		}
+// Creates a new Config object with the default values of the bound struct in the type.
+func NewConfigDefaults[T any]() *Config[T] {
+	var dat T
+	out, err := NewConfig(dat).Defaults()
+	if err != nil {
+		panic(err)
 	}
+	return out.(*Config[T])
+}
 
-	return nil
+// Implements the BindMarshaler() function from IConfig.
+func (c *Config[T]) BindMarshaler(nms ...marshaler.Marshaler) {
+	c.marshalers = mergeMarshalerArrays(c.marshalers, nms)
 }
 
 // Implements the Data() function from IConfig.
@@ -115,29 +97,27 @@ func (c Config[T]) Equal(other IConfig[T]) bool {
 	return reflect.DeepEqual(c.Data(), other.Data())
 }
 
-// Implements the LoadAs() function from IConfig.
-func (c *Config[T]) LoadAs(path string) (IConfig[T], error) {
-	return nil, nil
-}
-
-// Implements the SaveAs() function from IConfig.
-func (c Config[T]) SaveAs(paths string) error {
+// Implements the Save() function from IConfig.
+func (c Config[T]) Save() error {
 	//Ensure at least one marshaler is bound before continuing
-	if c.marshalers.Empty() {
+	if len(c.marshalers) == 0 {
 		return ErrNoMarshalers
 	}
 
-	//TODO: ensure the number of passed paths matches the number of marshalers that have a backing file, then marshal & save in order of L2H priority for all that have a backing file
+	//Run each marshaler
+	for _, mar := range c.marshalers {
+		//Run the current marshaler, but only if it has a set path value
+		if mar.Path() != "" {
+			data, err := mar.Marshal(&c.data)
+			if err != nil {
+				return fmt.Errorf("(%s) failed to marshal; %w", reflect.TypeOf(mar).Name(), err)
+			}
 
-	//Loop over the marshalers
-	//var data []byte
-
-	/*
-		data, err := json.Marshal(c.Data)
-		if err != nil {
-			return err
+			if err := os.WriteFile(mar.Path(), data, 0644); err != nil {
+				return fmt.Errorf("(%s) failed to write to file %s; %w", reflect.TypeOf(mar).Name(), mar.Path(), err)
+			}
 		}
-		return os.WriteFile(path, data, 0644)
-	*/
+	}
+
 	return nil
 }

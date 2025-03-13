@@ -1,28 +1,13 @@
 package marshaler
 
-// Defines the structure of a function that marshals a config object to a byte stream.
-type MarshalerFunc[T any] func(c T) ([]byte, error)
-
-// Defines the structure of a function that unmarshals a config object from a byte stream.
-type UMarshalerFunc[T any] func(b []byte, c T) error
-
 // Represents a basic marshal and unmarshal object that can be used to read/write to/from config files.
-type Marshaler[T any] interface {
-	// Whether this marshaler is backed by a file.
-	BackedByFile() bool
-
-	// The default path	to use when reading/writing.
-	DefaultPath() string
-
-	//The name of the marshaler. Must be constant and unique against other structs implementing this interface.
-	Ident() string
-
+type Marshaler interface {
 	// Converts a config object to a byte stream for writing to a file.
-	Marshal(c *T) ([]byte, error)
+	Marshal(c any) ([]byte, error)
 
-	// Indicates the priority of the marshaler. Higher numbers generally mean higher priority and run last when marshaling and unmarshaling.
-	Priority() int8
+	// The path	to use when reading/writing.
+	Path() string
 
 	// Converts a byte stream to a config object for usage.
-	UMarshal(b []byte, c *T) error
+	UMarshal(b []byte, c any) error
 }

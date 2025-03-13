@@ -2,11 +2,11 @@ package cfg
 
 import "github.com/jgilman1337/gotils/cfg/marshaler"
 
-// Creates a new config object using a JSON file as its backing marshaler.
+// Creates a new config object using a JSON file called `config.json` as its backing marshaler.
 func NewWithJson[T any]() *Config[T] {
-	jm := marshaler.NewJson[T]()
+	jm := marshaler.NewJson("")
 	out := presetCreate[T]()
-	out.marshalers.Enqueue(jm)
+	out.marshalers = append(out.marshalers, jm)
 	return out
 }
 

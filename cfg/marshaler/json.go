@@ -5,49 +5,36 @@ import (
 )
 
 // Represents a JSON marshaler that implements Marshaler.
-type Json[T any] struct {
-	priority int8
+type Json struct {
+	path     string
+	Minified bool
 }
 
 // Enforces compliance with the Marshaler interface.
-var _ Marshaler[any] = (*Json[any])(nil)
+var _ Marshaler = (*Json)(nil)
 
 // Creates a new Json marshaler object with a the default priority of 0.
-func NewJson[T any]() Json[T] {
-	return Json[T]{priority: 0}
-}
-
-// Creates a new Json marshaler object with a given priority.
-func NewJsonPriority[T any](priority int8) Json[T] {
-	return Json[T]{priority: priority}
-}
-
-// Implements the BackedByFile() function from Marshaler.
-func (j Json[T]) BackedByFile() bool {
-	return true
-}
-
-// Implements the DefaultPath() function from Marshaler.
-func (j Json[T]) DefaultPath() string {
-	return "config.json"
-}
-
-// Implements the Ident() function from Marshaler.
-func (j Json[T]) Ident() string {
-	return "json_marshaler"
+func NewJson(path string) Json {
+	if path == "" {
+		path = "config.json"
+	}
+	return Json{path: path}
 }
 
 // Implements the Marshal() function from Marshaler.
-func (j Json[T]) Marshal(c *T) ([]byte, error) {
-	return json.Marshal(c)
+func (j Json) Marshal(c any) ([]byte, error) {
+	if j.Minified {
+		return json.Marshal(c)
+	}
+	return json.MarshalIndent(c, "", "\t")
 }
 
-// Implements the Priority() function from Marshaler.
-func (j Json[T]) Priority() int8 {
-	return j.priority
+// Implements the Path() function from Marshaler.
+func (j Json) Path() string {
+	return j.path
 }
 
 // Implements the UMarshal() function from Marshaler.
-func (j Json[T]) UMarshal(b []byte, c *T) error {
-	return json.Unmarshal(b, &c)
+func (j Json) UMarshal(b []byte, c any) error {
+	return json.Unmarshal(b, c)
 }

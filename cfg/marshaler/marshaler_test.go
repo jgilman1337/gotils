@@ -27,12 +27,13 @@ var (
 	jout = []byte(`{"Foo":"hello world","Bar":42,"FooBar":{"bar":2,"baz":3,"foo":1},"Baz":["foo","bar","baz"]}`)
 
 	//A JSON marshaler instance for testing
-	mjson = Json[cfg]{}
+	mjson = Json{}
 )
 
 // Tests the marshaling function of the JSON marshaler struct.
 func TestMarshalJson(t *testing.T) {
 	//Run the test
+	mjson.Minified = true
 	actual, err := mjson.Marshal(&dat)
 	if err != nil {
 		t.Fatal(err)
