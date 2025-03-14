@@ -4,6 +4,7 @@ import (
 	"errors"
 	"fmt"
 	"os"
+	"path/filepath"
 	"reflect"
 
 	"github.com/creasty/defaults"
@@ -16,7 +17,7 @@ var (
 )
 
 // Defines a default configuration provider function.
-type DefaultsProvider[T any] func() (IConfig[T], error)
+type DefaultsProvider[T any] func() (*T, error)
 
 // Implements a basic configuration object that contains a data struct, which holds thr actual configuration data.
 type Config[T any] struct {
@@ -60,32 +61,14 @@ func (c *Config[T]) Data() *T {
 
 // Implements the Defaults() function from IConfig. Uses creasty/defaults or a custom provider to provide the default object.
 func (c *Config[T]) Defaults() (IConfig[T], error) {
-	//return &Config[T]{Data: Zero[T]()}, nil
-
 	//Use the defaults provider if set
 	if c.DFunc != nil {
-		//Get the default values
+		//Get the default object from the user provided function
 		defaults, err := c.DFunc()
 		if err != nil {
 			return nil, err
 		}
-
-		//Use reflection to set the value
-		//TODO: make this a utility
-		//TODO: may not be necessary to do all of these checks; more testing is required
-		v := reflect.ValueOf(c)
-		if v.Kind() != reflect.Ptr || v.IsNil() {
-			return nil, fmt.Errorf("c must be a non-nil pointer")
-		}
-
-		//Ensure the types match
-		dv := reflect.ValueOf(defaults)
-		if v.Elem().Type() != dv.Type() {
-			return nil, fmt.Errorf("type mismatch: cannot assign %v to %v", dv.Type(), v.Elem().Type())
-		}
-
-		//Set defaults
-		v.Elem().Set(dv)
+		c.data = *defaults
 		return c, nil
 	} else {
 		return c, defaults.Set(&c.data)
@@ -113,7 +96,8 @@ func (c Config[T]) Save() error {
 				return fmt.Errorf("(%s) failed to marshal; %w", reflect.TypeOf(mar).Name(), err)
 			}
 
-			if err := os.WriteFile(mar.Path(), data, 0644); err != nil {
+			err = os.WriteFile(filepath.Clean(mar.Path()), data, 0644)
+			if err != nil {
 				return fmt.Errorf("(%s) failed to write to file %s; %w", reflect.TypeOf(mar).Name(), mar.Path(), err)
 			}
 		}

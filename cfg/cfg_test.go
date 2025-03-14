@@ -30,8 +30,8 @@ var (
 	})
 )
 
-// Tests the "defaults" functionality of the configuration utility.
-func TestDefaults(t *testing.T) {
+// Tests the "defaults" functionality of the configuration utility using the default provider.
+func TestCreastyDefaults(t *testing.T) {
 	//Run the test
 	actual, err := NewConfig(cfgtest{}).Defaults()
 	if err != nil {
@@ -39,11 +39,32 @@ func TestDefaults(t *testing.T) {
 	}
 	fmt.Printf("%+v\n", actual)
 
-	/*
-		if err := actual.SaveAs("test.json"); err != nil {
-			t.Fatal(err)
-		}
-	*/
+	//Check for accuracy
+	if !dat.Equal(actual) {
+		t.Fatalf("incorrect defaults output; got `%+v`, expected `%+v`\n", actual.Data(), dat.Data())
+	}
+}
+
+// Tests the "defaults" functionality of the configuration utility using a user specified provider.
+func TestUserDefaults(t *testing.T) {
+	//Specify the defaults provider
+	dprovider := func() (*cfgtest, error) {
+		return &cfgtest{
+			Foo:    "hello world",
+			Bar:    42,
+			FooBar: map[string]int{"foo": 1, "bar": 2, "baz": 3},
+			Baz:    []string{"foo", "bar", "baz"},
+		}, nil
+	}
+
+	//Run the test
+	cfg := NewConfig(cfgtest{})
+	cfg.DFunc = dprovider
+	actual, err := cfg.Defaults()
+	if err != nil {
+		t.Fatal(err)
+	}
+	fmt.Printf("%+v\n", actual)
 
 	//Check for accuracy
 	if !dat.Equal(actual) {
