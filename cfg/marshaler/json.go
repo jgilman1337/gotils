@@ -13,7 +13,7 @@ type Json struct {
 // Enforces compliance with the Marshaler interface.
 var _ Marshaler = (*Json)(nil)
 
-// Creates a new Json marshaler object with a the default priority of 0.
+// Creates a new Json marshaler object.
 func NewJson(path string) Json {
 	if path == "" {
 		path = "config.json"
