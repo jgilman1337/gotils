@@ -58,8 +58,9 @@ func NewConfigDefaults[T any]() *Config[T] {
 }
 
 // Implements the BindMarshaler() function from IConfig.
-func (c *Config[T]) BindMarshaler(nms ...marshaler.Marshaler) {
+func (c *Config[T]) BindMarshaler(nms ...marshaler.Marshaler) IConfig[T] {
 	c.marshalers = mergeMarshalerArrays(c.marshalers, nms)
+	return c
 }
 
 // Implements the Data() function from IConfig.
@@ -89,43 +90,43 @@ func (c Config[T]) Equal(other IConfig[T]) bool {
 }
 
 // Implements the LoadBytes() function from IConfig.
-func (c *Config[T]) LoadBytes(in ...[]byte) error {
+func (c *Config[T]) LoadBytes(in ...[]byte) (*T, error) {
 	//Ensure the number of marshalers and varargs match
 	if len(in) != len(c.marshalers) {
-		return fmt.Errorf("%w; marshalers: %d, byte arrays: %d", ErrMismatchedBM, len(c.marshalers), len(in))
+		return nil, fmt.Errorf("%w; marshalers: %d, byte arrays: %d", ErrMismatchedBM, len(c.marshalers), len(in))
 	}
 
 	//Unmarshal the byte arrays in order of appearance
 	for i, m := range c.marshalers {
 		if err := m.UMarshal(in[i], &(c.data)); err != nil {
-			return fmt.Errorf("config (load bytes): feeder error: %v", err)
+			return nil, fmt.Errorf("config (load bytes): feeder error: %v", err)
 		}
 	}
 
-	return nil
+	return &c.data, nil
 }
 
 // Implements the LoadPath() function from IConfig.
-func (c *Config[T]) LoadPath() error {
+func (c *Config[T]) LoadPath() (*T, error) {
 	//Loop over the available marshalers
 	for _, m := range c.marshalers {
 		//Read in the file pointed to by the marshaler
 		mf, err := os.Open(m.Path())
 		if err != nil {
-			return fmt.Errorf("%w; marshaler: %T, file: %s", ErrFloadFailure, m, err)
+			return nil, fmt.Errorf("%w; marshaler: %T, file: %s", ErrFloadFailure, m, err)
 		}
 		mb, err := io.ReadAll(mf)
 		if err != nil {
-			return fmt.Errorf("%w; file: %s", ErrReadFailure, m.Path())
+			return nil, fmt.Errorf("%w; file: %s", ErrReadFailure, m.Path())
 		}
 
 		//Unmarshal the bytes to a struct
 		if err := m.UMarshal(mb, &(c.data)); err != nil {
-			return fmt.Errorf("config (load file): feeder error: %v", err)
+			return nil, fmt.Errorf("config (load file): feeder error: %v", err)
 		}
 	}
 
-	return nil
+	return &c.data, nil
 }
 
 // Implements the Save() function from IConfig.

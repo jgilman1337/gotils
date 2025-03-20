@@ -70,11 +70,11 @@ func TestUserDefaults(t *testing.T) {
 // Tests the "loader from bytes" functionality and ensures the JSON marshaler loads it properly.
 func TestLoadBytesJson(t *testing.T) {
 	//Create the config object and bind marshalers
-	cfg := NewConfig(cfgtest{})
-	cfg.BindMarshaler(marshaler.Json{})
+	cfg := NewConfig(cfgtest{}).
+		BindMarshaler(marshaler.Json{})
 
 	//Unmarshal the config object
-	if err := cfg.LoadBytes(datjson); err != nil {
+	if _, err := cfg.LoadBytes(datjson); err != nil {
 		t.Fatal(err)
 	}
 
@@ -98,11 +98,11 @@ func TestLoadFileJson(t *testing.T) {
 	defer os.Remove(tmpfile.Name())
 
 	//Create the config object and bind marshalers
-	cfg := NewConfig(cfgtest{})
-	cfg.BindMarshaler(marshaler.NewJson(tmpfile.Name()))
+	cfg := NewConfig(cfgtest{}).
+		BindMarshaler(marshaler.NewJson(tmpfile.Name()))
 
 	//Unmarshal the config object
-	if err := cfg.LoadPath(); err != nil {
+	if _, err := cfg.LoadPath(); err != nil {
 		t.Fatal(err)
 	}
 

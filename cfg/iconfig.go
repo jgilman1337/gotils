@@ -8,7 +8,7 @@ marshaling/unmarshaling to/from byte streams, and more.
 */
 type IConfig[T any] interface {
 	// Binds a marshaler or list of marshalers to this config object. Marshalers loaded last gain higher priority.
-	BindMarshaler(nms ...marshaler.Marshaler)
+	BindMarshaler(nms ...marshaler.Marshaler) IConfig[T]
 
 	// Provides a writable pointer to the config data contained within an IConfig struct.
 	Data() *T
@@ -23,10 +23,10 @@ type IConfig[T any] interface {
 	// Init() {}
 
 	// Loads this config object from given input bytes. The length of the varargs must match the number of bound marshalers.
-	LoadBytes(in ...[]byte) error
+	LoadBytes(in ...[]byte) (*T, error)
 
 	// Loads this config object from the path(s) specified by the bound marshalers.
-	LoadPath() error
+	LoadPath() (*T, error)
 
 	// Saves the default config object to the default path.
 	// SaveDefault() error
