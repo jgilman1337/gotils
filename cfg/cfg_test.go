@@ -28,6 +28,7 @@ var (
 		FooBar: map[string]int{"foo": 1, "bar": 2, "baz": 3},
 		Baz:    []string{"foo", "bar", "baz"},
 	})
+	datjson = []byte(`{"Foo":"hello world","Bar":42,"FooBar":{"bar":2,"baz":3,"foo":1},"Baz":["foo","bar","baz"]}`)
 )
 
 // Tests the "defaults" functionality of the configuration utility using the default provider.
@@ -49,34 +50,70 @@ func TestCreastyDefaults(t *testing.T) {
 func TestUserDefaults(t *testing.T) {
 	//Specify the defaults provider
 	dprovider := func() (*cfgtest, error) {
-		return &cfgtest{
-			Foo:    "hello world",
-			Bar:    42,
-			FooBar: map[string]int{"foo": 1, "bar": 2, "baz": 3},
-			Baz:    []string{"foo", "bar", "baz"},
-		}, nil
+		return dat.Data(), nil
 	}
 
 	//Run the test
 	cfg := NewConfig(cfgtest{})
 	cfg.DFunc = dprovider
-	actual, err := cfg.Defaults()
+	if _, err := cfg.Defaults(); err != nil {
+		t.Fatal(err)
+	}
+	fmt.Printf("%+v\n", cfg)
+
+	//Check for accuracy
+	if !dat.Equal(cfg) {
+		t.Fatalf("incorrect defaults output; got `%+v`, expected `%+v`\n", cfg.Data(), dat.Data())
+	}
+}
+
+// Tests the "loader from bytes" functionality and ensures the JSON marshaler loads it properly.
+func TestLoadBytesJson(t *testing.T) {
+	//Create the config object and bind marshalers
+	cfg := NewConfig(cfgtest{})
+	cfg.BindMarshaler(marshaler.Json{})
+
+	//Unmarshal the config object
+	if err := cfg.LoadBytes(datjson); err != nil {
+		t.Fatal(err)
+	}
+
+	//Ensure the actual and expected values match
+	if !dat.Equal(cfg) {
+		t.Fatalf("incorrect unmarshaller output; got `%+v`, expected `%+v`\n", cfg.Data(), dat.Data())
+	}
+}
+
+// Tests the "loader from file" functionality and ensures the JSON marshaler loads it properly.
+func TestLoadFileJson(t *testing.T) {
+	//Setup a temp file for the test
+	tmpfile, err := os.CreateTemp("", "*.tmp")
 	if err != nil {
 		t.Fatal(err)
 	}
-	fmt.Printf("%+v\n", actual)
+	if _, err := tmpfile.Write(datjson); err != nil {
+		t.Fatal(err)
+	}
+	defer tmpfile.Close()
+	defer os.Remove(tmpfile.Name())
 
-	//Check for accuracy
-	if !dat.Equal(actual) {
-		t.Fatalf("incorrect defaults output; got `%+v`, expected `%+v`\n", actual.Data(), dat.Data())
+	//Create the config object and bind marshalers
+	cfg := NewConfig(cfgtest{})
+	cfg.BindMarshaler(marshaler.NewJson(tmpfile.Name()))
+
+	//Unmarshal the config object
+	if err := cfg.LoadPath(); err != nil {
+		t.Fatal(err)
+	}
+
+	//Ensure the actual and expected values match
+	if !dat.Equal(cfg) {
+		t.Fatalf("incorrect unmarshaller output; got `%+v`, expected `%+v`\n", cfg.Data(), dat.Data())
 	}
 }
 
 // Tests the "defaults" functionality and ensures the JSON marshaler saves it properly.
 func TestSaveJson(t *testing.T) {
-	//Set the expected output
-	expected := `{"Foo":"hello world","Bar":42,"FooBar":{"bar":2,"baz":3,"foo":1},"Baz":["foo","bar","baz"]}`
-
 	//Configure the config object and create the configurer for the marshaler
 	cfg := NewConfigDefaults[cfgtest]()
 	mcfgFunc := func(p string) marshaler.Marshaler {
@@ -86,11 +123,11 @@ func TestSaveJson(t *testing.T) {
 	}
 
 	//Run the test
-	testMarshal2File(cfg, mcfgFunc, expected, t)
+	testMarshal2File(cfg, mcfgFunc, datjson, t)
 }
 
 // Common testing backend for the "save marshal" tests.
-func testMarshal2File[T any](cfg *Config[T], marshalerCfger func(p string) marshaler.Marshaler, expected string, t *testing.T) {
+func testMarshal2File[T any](cfg *Config[T], marshalerCfger func(p string) marshaler.Marshaler, expected []byte, t *testing.T) {
 	//Setup a temp file for the test
 	tmpfile, err := os.CreateTemp("", "*.tmp")
 	if err != nil {
@@ -111,7 +148,7 @@ func testMarshal2File[T any](cfg *Config[T], marshalerCfger func(p string) marsh
 	if err != nil {
 		t.Fatal(err)
 	}
-	if !bytes.Equal([]byte(expected), actual) {
+	if !bytes.Equal(expected, actual) {
 		t.Fatalf("incorrect marshaler output\n  actual:   %s\n  expected: %s\n", string(actual), string(expected))
 	}
 }

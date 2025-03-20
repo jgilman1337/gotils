@@ -3,6 +3,7 @@ package cfg
 import (
 	"errors"
 	"fmt"
+	"io"
 	"os"
 	"path/filepath"
 	"reflect"
@@ -12,8 +13,10 @@ import (
 )
 
 var (
-	ErrNoMarshalers          = errors.New("cannot marshal/unmarshal; no marshalers are bound to this object")
-	ErrMarshalerAlreadyBound = errors.New("the incoming marshaler at pos %d is already bound as %s (priority: %d)")
+	ErrNoMarshalers = errors.New("cannot marshal/unmarshal; no marshalers are bound to this object")
+	ErrFloadFailure = errors.New("failed to load the config file pointed to by the current marshaller")
+	ErrMismatchedBM = errors.New("mismatched marshaler and in byte array sizes")
+	ErrReadFailure  = errors.New("failed to read the config bytes provided by the current file")
 )
 
 // Defines a default configuration provider function.
@@ -39,7 +42,12 @@ func NewConfig[T any](data T) *Config[T] {
 	}
 }
 
-// Creates a new Config object with the default values of the bound struct in the type.
+/*
+Creates a new Config object with the default values of the bound struct in the type.
+This function equivalent to the following statement:
+
+	cfg := must(NewConfig(cfgObject{}).Defaults())
+*/
 func NewConfigDefaults[T any]() *Config[T] {
 	var dat T
 	out, err := NewConfig(dat).Defaults()
@@ -61,7 +69,7 @@ func (c *Config[T]) Data() *T {
 
 // Implements the Defaults() function from IConfig. Uses creasty/defaults or a custom provider to provide the default object.
 func (c *Config[T]) Defaults() (IConfig[T], error) {
-	//Use the defaults provider if set
+	//Use the user provided defaults provider if set
 	if c.DFunc != nil {
 		//Get the default object from the user provided function
 		defaults, err := c.DFunc()
@@ -80,6 +88,46 @@ func (c Config[T]) Equal(other IConfig[T]) bool {
 	return reflect.DeepEqual(c.Data(), other.Data())
 }
 
+// Implements the LoadBytes() function from IConfig.
+func (c *Config[T]) LoadBytes(in ...[]byte) error {
+	//Ensure the number of marshalers and varargs match
+	if len(in) != len(c.marshalers) {
+		return fmt.Errorf("%w; marshalers: %d, byte arrays: %d", ErrMismatchedBM, len(c.marshalers), len(in))
+	}
+
+	//Unmarshal the byte arrays in order of appearance
+	for i, m := range c.marshalers {
+		if err := m.UMarshal(in[i], &(c.data)); err != nil {
+			return fmt.Errorf("config (load bytes): feeder error: %v", err)
+		}
+	}
+
+	return nil
+}
+
+// Implements the LoadPath() function from IConfig.
+func (c *Config[T]) LoadPath() error {
+	//Loop over the available marshalers
+	for _, m := range c.marshalers {
+		//Read in the file pointed to by the marshaler
+		mf, err := os.Open(m.Path())
+		if err != nil {
+			return fmt.Errorf("%w; marshaler: %T, file: %s", ErrFloadFailure, m, err)
+		}
+		mb, err := io.ReadAll(mf)
+		if err != nil {
+			return fmt.Errorf("%w; file: %s", ErrReadFailure, m.Path())
+		}
+
+		//Unmarshal the bytes to a struct
+		if err := m.UMarshal(mb, &(c.data)); err != nil {
+			return fmt.Errorf("config (load file): feeder error: %v", err)
+		}
+	}
+
+	return nil
+}
+
 // Implements the Save() function from IConfig.
 func (c Config[T]) Save() error {
 	//Ensure at least one marshaler is bound before continuing
@@ -93,12 +141,12 @@ func (c Config[T]) Save() error {
 		if mar.Path() != "" {
 			data, err := mar.Marshal(&c.data)
 			if err != nil {
-				return fmt.Errorf("(%s) failed to marshal; %w", reflect.TypeOf(mar).Name(), err)
+				return fmt.Errorf("config (marshal %s): failed to marshal; %w", reflect.TypeOf(mar).Name(), err)
 			}
 
 			err = os.WriteFile(filepath.Clean(mar.Path()), data, 0644)
 			if err != nil {
-				return fmt.Errorf("(%s) failed to write to file %s; %w", reflect.TypeOf(mar).Name(), mar.Path(), err)
+				return fmt.Errorf("config (write %s) failed to write to file %s; %w", reflect.TypeOf(mar).Name(), mar.Path(), err)
 			}
 		}
 	}
